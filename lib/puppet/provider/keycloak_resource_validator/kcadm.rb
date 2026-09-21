@@ -91,9 +91,15 @@ Puppet::Type.type(:keycloak_resource_validator).provide(:kcadm, parent: Puppet::
     output = kcadm('get', 'serverinfo')
     data = JSON.parse(output)
     providers = data.dig('providers', resource[:provider_type].to_s, 'providers')
-    return false unless providers.is_a?(Array)
-
-    providers.include?(resource[:provider_id].to_s)
+    case providers
+    when Hash
+      # Keycloak >= 26: {id => {"order" => N}, ...}
+      providers.keys.include?(resource[:provider_id].to_s)
+    when Array
+      providers.include?(resource[:provider_id].to_s)
+    else
+      false
+    end
   rescue JSON::ParserError
     Puppet.debug('Unable to parse output from kcadm get serverinfo')
     false
