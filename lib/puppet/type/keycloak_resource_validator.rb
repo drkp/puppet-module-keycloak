@@ -25,6 +25,14 @@ Verify that a specific Keycloak resource is available
     desc 'Value to lookup'
   end
 
+  newparam(:provider_type) do
+    desc 'SPI name (e.g. required-action) whose loaded providers are checked via the serverinfo endpoint. Set together with provider_id for a loaded-SPI-provider readiness check; mutually exclusive with test_url/test_key/test_value.'
+  end
+
+  newparam(:provider_id) do
+    desc 'Provider ID that must be present in the loaded providers of provider_type'
+  end
+
   newparam(:realm) do
     desc 'Realm to query'
   end
@@ -48,14 +56,15 @@ Verify that a specific Keycloak resource is available
   end
 
   validate do
-    if self[:test_url].nil?
-      raise "Keycloak_resource_validator[#{self[:name]}] test_url is required"
-    end
-    if self[:test_key].nil?
-      raise "Keycloak_resource_validator[#{self[:name]}] test_key is required"
-    end
-    if self[:test_value].nil?
-      raise "Keycloak_resource_validator[#{self[:name]}] test_value is required"
+    if self[:provider_type] || self[:provider_id]
+      raise "Keycloak_resource_validator[#{self[:name]}] provider_type and provider_id must be set together" if self[:provider_type].nil? || self[:provider_id].nil?
+      if self[:test_url] || self[:test_key] || self[:test_value]
+        raise "Keycloak_resource_validator[#{self[:name]}] test_url/test_key/test_value are mutually exclusive with provider_type/provider_id"
+      end
+    else
+      raise "Keycloak_resource_validator[#{self[:name]}] test_url is required" if self[:test_url].nil?
+      raise "Keycloak_resource_validator[#{self[:name]}] test_key is required" if self[:test_key].nil?
+      raise "Keycloak_resource_validator[#{self[:name]}] test_value is required" if self[:test_value].nil?
     end
   end
 end

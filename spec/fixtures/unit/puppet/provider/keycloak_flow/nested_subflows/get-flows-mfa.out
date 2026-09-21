@@ -1,0 +1,23 @@
+[ {
+  "id" : "56deb0ec-c11e-4fb6-b1a3-6e7875f46a87",
+  "alias" : "browser",
+  "description" : "browser based authentication",
+  "providerId" : "basic-flow",
+  "topLevel" : true,
+  "builtIn" : true,
+  "authenticationExecutions" : [ {
+    "authenticator" : "auth-cookie",
+    "requirement" : "ALTERNATIVE",
+    "priority" : 10,
+    "userSetupAllowed" : false,
+    "autheticatorFlow" : false
+  } ]
+}, {
+  "id" : "9f8e7d6c-5b4a-3210-fedc-ba9876543210",
+  "alias" : "browser-custom",
+  "description" : null,
+  "providerId" : "basic-flow",
+  "topLevel" : true,
+  "builtIn" : false,
+  "authenticationExecutions" : [ ]
+} ]
