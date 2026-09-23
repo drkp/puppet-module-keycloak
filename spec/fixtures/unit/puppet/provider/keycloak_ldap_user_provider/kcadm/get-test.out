@@ -50,6 +50,7 @@
     "importEnabled" : [ "false" ],
     "userObjectClasses" : [ "posixAccount" ],
     "usernameLDAPAttribute" : [ "uid" ],
+    "enableLdapPasswordPolicy" : [ "true" ],
     "changedSyncPeriod" : [ "-1" ],
     "rdnLDAPAttribute" : [ "uid" ],
     "vendor" : [ "other" ],

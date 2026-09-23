@@ -1156,6 +1156,8 @@ The following parameters are available in the `keycloak::freeipa_user_provider` 
 * [`ldaps`](#-keycloak--freeipa_user_provider--ldaps)
 * [`enabled`](#-keycloak--freeipa_user_provider--enabled)
 * [`trust_email`](#-keycloak--freeipa_user_provider--trust_email)
+* [`enable_ldap_password_policy`](#-keycloak--freeipa_user_provider--enable_ldap_password_policy)
+* [`use_password_modify_extended_op`](#-keycloak--freeipa_user_provider--use_password_modify_extended_op)
 * [`full_sync_period`](#-keycloak--freeipa_user_provider--full_sync_period)
 * [`changed_sync_period`](#-keycloak--freeipa_user_provider--changed_sync_period)
 
@@ -1238,6 +1240,26 @@ Data type: `Boolean`
 Trust email addresses from FreeIPA as verified (trustEmail)
 
 Default value: `false`
+
+##### <a name="-keycloak--freeipa_user_provider--enable_ldap_password_policy"></a>`enable_ldap_password_policy`
+
+Data type: `Optional[Boolean]`
+
+Enforce the LDAP server's password policy on bind by sending a password
+policy request control; a `pwdMustChange`/`changeAfterReset` response is
+surfaced as a forced password change (enableLdapPasswordPolicy).
+Requires Keycloak 26.6.0 or later; left unmanaged when undef.
+
+Default value: `undef`
+
+##### <a name="-keycloak--freeipa_user_provider--use_password_modify_extended_op"></a>`use_password_modify_extended_op`
+
+Data type: `Optional[Boolean]`
+
+Use the extended LDAP password modify operation for password updates
+(usePasswordModifyExtendedOp). Left unmanaged when undef.
+
+Default value: `undef`
 
 ##### <a name="-keycloak--freeipa_user_provider--full_sync_period"></a>`full_sync_period`
 
@@ -3009,6 +3031,12 @@ editMode
 
 Default value: `READ_ONLY`
 
+##### `enable_ldap_password_policy`
+
+Valid values: `true`, `false`
+
+enableLdapPasswordPolicy. Requires Keycloak 26.6.0 or later. Unmanaged by default because earlier versions silently discard this key on update.
+
 ##### `enabled`
 
 Valid values: `true`, `false`
@@ -3090,6 +3118,12 @@ Default value: `false`
 Valid values: `true`, `false`
 
 useKerberosForPasswordAuthentication
+
+##### `use_password_modify_extended_op`
+
+Valid values: `true`, `false`
+
+usePasswordModifyExtendedOp. Unmanaged by default so that a value set outside Puppet is not silently turned off.
 
 ##### `use_truststore_spi`
 
@@ -4121,6 +4155,8 @@ The following parameters are available in the `keycloak_resource_validator` type
 * [`dependent_resources`](#-keycloak_resource_validator--dependent_resources)
 * [`name`](#-keycloak_resource_validator--name)
 * [`provider`](#-keycloak_resource_validator--provider)
+* [`provider_id`](#-keycloak_resource_validator--provider_id)
+* [`provider_type`](#-keycloak_resource_validator--provider_type)
 * [`realm`](#-keycloak_resource_validator--realm)
 * [`test_key`](#-keycloak_resource_validator--test_key)
 * [`test_url`](#-keycloak_resource_validator--test_url)
@@ -4141,6 +4177,15 @@ An arbitrary name used as the identity of the resource.
 
 The specific backend to use for this `keycloak_resource_validator` resource. You will seldom need to specify this ---
 Puppet will usually discover the appropriate provider for your platform.
+
+##### <a name="-keycloak_resource_validator--provider_id"></a>`provider_id`
+
+Provider ID that must be present in the loaded providers of provider_type
+
+##### <a name="-keycloak_resource_validator--provider_type"></a>`provider_type`
+
+SPI name (e.g. required-action) whose loaded providers are checked via the serverinfo endpoint. Set together with
+provider_id for a loaded-SPI-provider readiness check; mutually exclusive with test_url/test_key/test_value.
 
 ##### <a name="-keycloak_resource_validator--realm"></a>`realm`
 

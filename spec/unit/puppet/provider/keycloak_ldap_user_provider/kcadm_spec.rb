@@ -26,6 +26,14 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider).provider(:kcadm) do
       property_hash = described_class.instances[0].instance_variable_get('@property_hash')
       expect(property_hash[:name]).to eq('LDAP on test')
     end
+
+    it 'reads enableLdapPasswordPolicy' do
+      allow(described_class).to receive(:realms).and_return(['master', 'test'])
+      allow(described_class).to receive(:kcadm).with('get', 'components', 'master').and_return(my_fixture_read('get-master.out'))
+      allow(described_class).to receive(:kcadm).with('get', 'components', 'test').and_return(my_fixture_read('get-test.out'))
+      property_hash = described_class.instances[0].instance_variable_get('@property_hash')
+      expect(property_hash[:enable_ldap_password_policy]).to eq('true')
+    end
   end
 
   #   describe 'self.prefetch' do
@@ -49,6 +57,26 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider).provider(:kcadm) do
   #       described_class.prefetch(resources)
   #     end
   #   end
+  describe 'self.config_key_for' do
+    it 'upper-cases LDAP for the attribute keys' do
+      expect(described_class.config_key_for(:username_ldap_attribute)).to eq('usernameLDAPAttribute')
+      expect(described_class.config_key_for(:rdn_ldap_attribute)).to eq('rdnLDAPAttribute')
+      expect(described_class.config_key_for(:uuid_ldap_attribute)).to eq('uuidLDAPAttribute')
+    end
+
+    it 'uses the camel-case Ldap spelling Keycloak expects for the password policy key' do
+      expect(described_class.config_key_for(:enable_ldap_password_policy)).to eq('enableLdapPasswordPolicy')
+    end
+
+    it 'leaves keys without ldap in the name alone' do
+      expect(described_class.config_key_for(:use_password_modify_extended_op)).to eq('usePasswordModifyExtendedOp')
+    end
+
+    it 'is available as an instance method' do
+      expect(resource.provider.config_key_for(:enable_ldap_password_policy)).to eq('enableLdapPasswordPolicy')
+    end
+  end
+
   describe 'create' do
     it 'creates a realm' do
       temp = Tempfile.new('keycloak_component')
@@ -58,6 +86,31 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider).provider(:kcadm) do
       resource.provider.create
       property_hash = resource.provider.instance_variable_get('@property_hash')
       expect(property_hash[:ensure]).to eq(:present)
+    end
+
+    it 'writes the config keys Keycloak expects' do
+      resource = type.new(name: 'foo', realm: 'test',
+                          enable_ldap_password_policy: true,
+                          use_password_modify_extended_op: true)
+      temp = Tempfile.new('keycloak_component')
+      allow(Tempfile).to receive(:new).with('keycloak_component').and_return(temp)
+      allow(resource.provider).to receive(:get_parent_id).with('test').and_return('test')
+      allow(resource.provider).to receive(:kcadm)
+      resource.provider.create
+      config = JSON.parse(File.read(temp.path))['config']
+      expect(config['enableLdapPasswordPolicy']).to eq(['true'])
+      expect(config).not_to have_key('enableLDAPPasswordPolicy')
+      expect(config['usePasswordModifyExtendedOp']).to eq(['true'])
+    end
+
+    it 'omits the password policy key when it is not managed' do
+      temp = Tempfile.new('keycloak_component')
+      allow(Tempfile).to receive(:new).with('keycloak_component').and_return(temp)
+      allow(resource.provider).to receive(:get_parent_id).with('test').and_return('test')
+      allow(resource.provider).to receive(:kcadm)
+      resource.provider.create
+      config = JSON.parse(File.read(temp.path))['config']
+      expect(config).not_to have_key('enableLdapPasswordPolicy')
     end
   end
 
@@ -81,6 +134,19 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider).provider(:kcadm) do
       expect(resource.provider).to receive(:kcadm).with('update', 'components/b84ed8ed-a7b1-502f-83f6-90132e68adef', 'test', temp.path)
       resource.provider.connection_url = 'foobar'
       resource.provider.flush
+    end
+
+    it 'writes the config key Keycloak expects' do
+      resource = type.new(name: 'foo', realm: 'test', enable_ldap_password_policy: true)
+      resource.provider.instance_variable_set(:@property_hash, resource.to_hash)
+      temp = Tempfile.new('keycloak_component')
+      allow(Tempfile).to receive(:new).with('keycloak_component').and_return(temp)
+      allow(resource.provider).to receive(:kcadm)
+      resource.provider.enable_ldap_password_policy = :true
+      resource.provider.flush
+      config = JSON.parse(File.read(temp.path))['config']
+      expect(config['enableLdapPasswordPolicy']).to eq(['true'])
+      expect(config).not_to have_key('enableLDAPPasswordPolicy')
     end
   end
 end
