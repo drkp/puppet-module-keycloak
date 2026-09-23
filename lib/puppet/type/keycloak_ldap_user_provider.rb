@@ -261,6 +261,17 @@ Manage Keycloak LDAP user providers
     munge { |v| v.to_s }
   end
 
+  newproperty(:enable_ldap_password_policy, boolean: true) do
+    desc 'enableLdapPasswordPolicy. Requires Keycloak 26.6.0 or later. Unmanaged by default because earlier versions silently discard this key on update.'
+    newvalues(:true, :false)
+  end
+
+  newproperty(:use_password_modify_extended_op, boolean: true) do
+    desc 'usePasswordModifyExtendedOp'
+    newvalues(:true, :false)
+    defaultto :false
+  end
+
   validate do
     if self[:use_kerberos_for_password_authentication] && self[:auth_type] == 'none'
       raise Puppet::Error, 'use_kerberos_for_password_authentication is not valid for auth_type none'

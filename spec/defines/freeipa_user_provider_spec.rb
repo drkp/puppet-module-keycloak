@@ -39,7 +39,12 @@ describe 'keycloak::freeipa_user_provider' do
           vendor: 'rhds',
           enabled: true,
           trust_email: false,
+          use_password_modify_extended_op: false,
         )
+      end
+
+      it 'leaves enable_ldap_password_policy unmanaged by default' do
+        is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_enable_ldap_password_policy
       end
 
       context 'when enabled is false' do
@@ -52,6 +57,18 @@ describe 'keycloak::freeipa_user_provider' do
         let(:params) { default_params.merge(trust_email: true) }
 
         it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_trust_email(true) }
+      end
+
+      context 'when enable_ldap_password_policy is true' do
+        let(:params) { default_params.merge(enable_ldap_password_policy: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_enable_ldap_password_policy(true) }
+      end
+
+      context 'when use_password_modify_extended_op is true' do
+        let(:params) { default_params.merge(use_password_modify_extended_op: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_use_password_modify_extended_op(true) }
       end
 
       context 'when ensure is absent' do

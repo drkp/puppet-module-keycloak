@@ -206,6 +206,7 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
     import_enabled: :true,
     user_object_classes: ['inetOrgPerson', 'organizationalPerson'],
     trust_email: :false,
+    use_password_modify_extended_op: :false,
     full_sync_period: '-1',
     changed_sync_period: '-1',
     sync_registrations: :false,
@@ -260,6 +261,8 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
       :enabled,
       :import_enabled,
       :trust_email,
+      :enable_ldap_password_policy,
+      :use_password_modify_extended_op,
       :sync_registrations,
     ].each do |p|
       it "accepts true for #{p}" do
@@ -288,6 +291,10 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
       it "has default for #{p}" do
         expect(resource[p]).to eq(defaults[p])
       end
+    end
+
+    it 'has no default for enable_ldap_password_policy' do
+      expect(resource[:enable_ldap_password_policy]).to be_nil
     end
   end
 

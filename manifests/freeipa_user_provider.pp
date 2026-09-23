@@ -33,6 +33,14 @@
 #   Enable or disable the user provider without removing it
 # @param trust_email
 #   Trust email addresses from FreeIPA as verified (trustEmail)
+# @param enable_ldap_password_policy
+#   Enforce the LDAP server's password policy on bind by sending a password
+#   policy request control; a `pwdMustChange`/`changeAfterReset` response is
+#   surfaced as a forced password change (enableLdapPasswordPolicy).
+#   Requires Keycloak 26.6.0 or later; left unmanaged when undef.
+# @param use_password_modify_extended_op
+#   Use the extended LDAP password modify operation for password updates
+#   (usePasswordModifyExtendedOp)
 # @param full_sync_period
 #   Synchronize all users this often (fullSyncPeriod)
 # @param changed_sync_period
@@ -50,6 +58,8 @@ define keycloak::freeipa_user_provider (
   Boolean $ldaps = false,
   Boolean $enabled = true,
   Boolean $trust_email = false,
+  Optional[Boolean] $enable_ldap_password_policy = undef,
+  Boolean $use_password_modify_extended_op = false,
   Optional[Integer] $full_sync_period = undef,
   Optional[Integer] $changed_sync_period = undef
 ) {
@@ -81,6 +91,8 @@ define keycloak::freeipa_user_provider (
     vendor                                   => 'rhds',
     enabled                                  => $enabled,
     trust_email                              => $trust_email,
+    enable_ldap_password_policy              => $enable_ldap_password_policy,
+    use_password_modify_extended_op          => $use_password_modify_extended_op,
     full_sync_period                         => $full_sync_period,
     changed_sync_period                      => $changed_sync_period,
   }

@@ -1156,6 +1156,8 @@ The following parameters are available in the `keycloak::freeipa_user_provider` 
 * [`ldaps`](#-keycloak--freeipa_user_provider--ldaps)
 * [`enabled`](#-keycloak--freeipa_user_provider--enabled)
 * [`trust_email`](#-keycloak--freeipa_user_provider--trust_email)
+* [`enable_ldap_password_policy`](#-keycloak--freeipa_user_provider--enable_ldap_password_policy)
+* [`use_password_modify_extended_op`](#-keycloak--freeipa_user_provider--use_password_modify_extended_op)
 * [`full_sync_period`](#-keycloak--freeipa_user_provider--full_sync_period)
 * [`changed_sync_period`](#-keycloak--freeipa_user_provider--changed_sync_period)
 
@@ -1236,6 +1238,25 @@ Default value: `true`
 Data type: `Boolean`
 
 Trust email addresses from FreeIPA as verified (trustEmail)
+
+Default value: `false`
+
+##### <a name="-keycloak--freeipa_user_provider--enable_ldap_password_policy"></a>`enable_ldap_password_policy`
+
+Data type: `Optional[Boolean]`
+
+Enforce the LDAP server's password policy on bind by sending a password
+policy request control; a `pwdMustChange`/`changeAfterReset` response is
+surfaced as a forced password change (enableLdapPasswordPolicy).
+Requires Keycloak 26.6.0 or later; left unmanaged when undef.
+
+Default value: `undef`
+
+##### <a name="-keycloak--freeipa_user_provider--use_password_modify_extended_op"></a>`use_password_modify_extended_op`
+
+Data type: `Boolean`
+
+Use the extended LDAP password modify operation for password updates (usePasswordModifyExtendedOp)
 
 Default value: `false`
 
