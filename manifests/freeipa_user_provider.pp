@@ -41,6 +41,9 @@
 # @param use_password_modify_extended_op
 #   Use the extended LDAP password modify operation for password updates
 #   (usePasswordModifyExtendedOp)
+# @param validate_password_policy
+#   Validate a new password against the realm's password policy before
+#   writing it to LDAP (validatePasswordPolicy)
 # @param full_sync_period
 #   Synchronize all users this often (fullSyncPeriod)
 # @param changed_sync_period
@@ -60,6 +63,7 @@ define keycloak::freeipa_user_provider (
   Boolean $trust_email = false,
   Optional[Boolean] $enable_ldap_password_policy = undef,
   Boolean $use_password_modify_extended_op = false,
+  Boolean $validate_password_policy = false,
   Optional[Integer] $full_sync_period = undef,
   Optional[Integer] $changed_sync_period = undef
 ) {
@@ -93,6 +97,7 @@ define keycloak::freeipa_user_provider (
     trust_email                              => $trust_email,
     enable_ldap_password_policy              => $enable_ldap_password_policy,
     use_password_modify_extended_op          => $use_password_modify_extended_op,
+    validate_password_policy                 => $validate_password_policy,
     full_sync_period                         => $full_sync_period,
     changed_sync_period                      => $changed_sync_period,
   }

@@ -207,6 +207,7 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
     user_object_classes: ['inetOrgPerson', 'organizationalPerson'],
     trust_email: :false,
     use_password_modify_extended_op: :false,
+    validate_password_policy: :false,
     full_sync_period: '-1',
     changed_sync_period: '-1',
     sync_registrations: :false,
@@ -263,6 +264,7 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
       :trust_email,
       :enable_ldap_password_policy,
       :use_password_modify_extended_op,
+      :validate_password_policy,
       :sync_registrations,
     ].each do |p|
       it "accepts true for #{p}" do
