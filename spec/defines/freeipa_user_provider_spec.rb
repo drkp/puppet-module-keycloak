@@ -50,6 +50,10 @@ describe 'keycloak::freeipa_user_provider' do
         is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_use_password_modify_extended_op
       end
 
+      it 'leaves validate_password_policy unmanaged by default' do
+        is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_validate_password_policy
+      end
+
       context 'when enabled is false' do
         let(:params) { default_params.merge(enabled: false) }
 
@@ -72,6 +76,12 @@ describe 'keycloak::freeipa_user_provider' do
         let(:params) { default_params.merge(use_password_modify_extended_op: true) }
 
         it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_use_password_modify_extended_op(true) }
+      end
+
+      context 'when validate_password_policy is true' do
+        let(:params) { default_params.merge(validate_password_policy: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_validate_password_policy(true) }
       end
 
       context 'when ensure is absent' do

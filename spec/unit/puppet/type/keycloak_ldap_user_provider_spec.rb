@@ -262,6 +262,7 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
       :trust_email,
       :enable_ldap_password_policy,
       :use_password_modify_extended_op,
+      :validate_password_policy,
       :sync_registrations,
     ].each do |p|
       it "accepts true for #{p}" do
@@ -298,6 +299,10 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider) do
 
     it 'has no default for use_password_modify_extended_op' do
       expect(resource[:use_password_modify_extended_op]).to be_nil
+    end
+
+    it 'has no default for validate_password_policy' do
+      expect(resource[:validate_password_policy]).to be_nil
     end
   end
 

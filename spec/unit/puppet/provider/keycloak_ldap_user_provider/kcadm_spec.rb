@@ -70,6 +70,7 @@ describe Puppet::Type.type(:keycloak_ldap_user_provider).provider(:kcadm) do
 
     it 'leaves keys without ldap in the name alone' do
       expect(described_class.config_key_for(:use_password_modify_extended_op)).to eq('usePasswordModifyExtendedOp')
+      expect(described_class.config_key_for(:validate_password_policy)).to eq('validatePasswordPolicy')
     end
 
     it 'is available as an instance method' do

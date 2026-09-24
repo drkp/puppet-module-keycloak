@@ -1158,6 +1158,7 @@ The following parameters are available in the `keycloak::freeipa_user_provider` 
 * [`trust_email`](#-keycloak--freeipa_user_provider--trust_email)
 * [`enable_ldap_password_policy`](#-keycloak--freeipa_user_provider--enable_ldap_password_policy)
 * [`use_password_modify_extended_op`](#-keycloak--freeipa_user_provider--use_password_modify_extended_op)
+* [`validate_password_policy`](#-keycloak--freeipa_user_provider--validate_password_policy)
 * [`full_sync_period`](#-keycloak--freeipa_user_provider--full_sync_period)
 * [`changed_sync_period`](#-keycloak--freeipa_user_provider--changed_sync_period)
 
@@ -1258,6 +1259,15 @@ Data type: `Optional[Boolean]`
 
 Use the extended LDAP password modify operation for password updates
 (usePasswordModifyExtendedOp). Left unmanaged when undef.
+
+Default value: `undef`
+
+##### <a name="-keycloak--freeipa_user_provider--validate_password_policy"></a>`validate_password_policy`
+
+Data type: `Optional[Boolean]`
+
+Validate a new password against the realm's password policy before
+writing it to LDAP (validatePasswordPolicy). Left unmanaged when undef.
 
 Default value: `undef`
 
@@ -3154,6 +3164,12 @@ usersDn
 uuidLdapAttribute
 
 Default value: `entryUUID`
+
+##### `validate_password_policy`
+
+Valid values: `true`, `false`
+
+validatePasswordPolicy. Unmanaged by default so that a value set outside Puppet is not silently turned off.
 
 ##### `vendor`
 

@@ -271,6 +271,11 @@ Manage Keycloak LDAP user providers
     newvalues(:true, :false)
   end
 
+  newproperty(:validate_password_policy, boolean: true) do
+    desc 'validatePasswordPolicy. Unmanaged by default so that a value set outside Puppet is not silently turned off.'
+    newvalues(:true, :false)
+  end
+
   validate do
     if self[:use_kerberos_for_password_authentication] && self[:auth_type] == 'none'
       raise Puppet::Error, 'use_kerberos_for_password_authentication is not valid for auth_type none'
