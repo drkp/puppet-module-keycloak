@@ -1159,6 +1159,7 @@ The following parameters are available in the `keycloak::freeipa_user_provider` 
 * [`enable_ldap_password_policy`](#-keycloak--freeipa_user_provider--enable_ldap_password_policy)
 * [`use_password_modify_extended_op`](#-keycloak--freeipa_user_provider--use_password_modify_extended_op)
 * [`validate_password_policy`](#-keycloak--freeipa_user_provider--validate_password_policy)
+* [`edit_mode`](#-keycloak--freeipa_user_provider--edit_mode)
 * [`full_sync_period`](#-keycloak--freeipa_user_provider--full_sync_period)
 * [`changed_sync_period`](#-keycloak--freeipa_user_provider--changed_sync_period)
 
@@ -1269,6 +1270,16 @@ Validate a new password against the realm's password policy before
 writing it to LDAP (validatePasswordPolicy)
 
 Default value: `false`
+
+##### <a name="-keycloak--freeipa_user_provider--edit_mode"></a>`edit_mode`
+
+Data type: `Enum['READ_ONLY', 'WRITABLE', 'UNSYNCED']`
+
+Whether the user store is read-only, writable, or unsynced (editMode).
+`WRITABLE` requires a bind_dn with write access to the FreeIPA directory,
+and typically use_password_modify_extended_op for password changes.
+
+Default value: `'READ_ONLY'`
 
 ##### <a name="-keycloak--freeipa_user_provider--full_sync_period"></a>`full_sync_period`
 

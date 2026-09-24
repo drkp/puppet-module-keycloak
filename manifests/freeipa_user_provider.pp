@@ -44,6 +44,10 @@
 # @param validate_password_policy
 #   Validate a new password against the realm's password policy before
 #   writing it to LDAP (validatePasswordPolicy)
+# @param edit_mode
+#   Whether the user store is read-only, writable, or unsynced (editMode).
+#   `WRITABLE` requires a bind_dn with write access to the FreeIPA directory,
+#   and typically use_password_modify_extended_op for password changes.
 # @param full_sync_period
 #   Synchronize all users this often (fullSyncPeriod)
 # @param changed_sync_period
@@ -64,6 +68,7 @@ define keycloak::freeipa_user_provider (
   Optional[Boolean] $enable_ldap_password_policy = undef,
   Boolean $use_password_modify_extended_op = false,
   Boolean $validate_password_policy = false,
+  Enum['READ_ONLY', 'WRITABLE', 'UNSYNCED'] $edit_mode = 'READ_ONLY',
   Optional[Integer] $full_sync_period = undef,
   Optional[Integer] $changed_sync_period = undef
 ) {
@@ -81,7 +86,7 @@ define keycloak::freeipa_user_provider (
     bind_credential                          => $bind_credential,
     bind_dn                                  => $bind_dn,
     connection_url                           => $connection_url,
-    edit_mode                                => 'READ_ONLY',
+    edit_mode                                => $edit_mode,
     import_enabled                           => 'true',
     priority                                 => $priority,
     rdn_ldap_attribute                       => 'uid',

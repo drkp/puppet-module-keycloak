@@ -78,6 +78,18 @@ describe 'keycloak::freeipa_user_provider' do
         it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_validate_password_policy(true) }
       end
 
+      context 'when edit_mode is WRITABLE' do
+        let(:params) { default_params.merge(edit_mode: 'WRITABLE') }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_edit_mode('WRITABLE') }
+      end
+
+      context 'when edit_mode is invalid' do
+        let(:params) { default_params.merge(edit_mode: 'NOPE') }
+
+        it { is_expected.to compile.and_raise_error(%r{edit_mode}) }
+      end
+
       context 'when ensure is absent' do
         let(:params) { default_params.merge(ensure: 'absent') }
 
