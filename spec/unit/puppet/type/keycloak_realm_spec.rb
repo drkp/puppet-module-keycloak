@@ -31,6 +31,7 @@ describe Puppet::Type.type(:keycloak_realm) do
   end
 
   defaults = {
+    frontend_url: nil,
     login_theme: 'keycloak',
     account_theme: 'keycloak',
     admin_theme: 'keycloak',
@@ -200,6 +201,7 @@ describe Puppet::Type.type(:keycloak_realm) do
     [
       :display_name,
       :display_name_html,
+      :frontend_url,
       :login_theme,
       :account_theme,
       :admin_theme,

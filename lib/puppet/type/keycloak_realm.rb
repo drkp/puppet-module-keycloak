@@ -48,6 +48,14 @@ Manage Keycloak realms
     desc 'displayNameHtml'
   end
 
+  newproperty(:frontend_url) do
+    desc <<-DESC
+      Realm specific frontend URL, stored as the `frontendUrl` realm attribute.
+      Overrides the server wide `hostname` for this realm only.
+      Set to an empty string to remove the override.
+    DESC
+  end
+
   newproperty(:user_managed_access_allowed, boolean: true) do
     desc 'userManagedAccessAllowed'
     newvalues(:true, :false)

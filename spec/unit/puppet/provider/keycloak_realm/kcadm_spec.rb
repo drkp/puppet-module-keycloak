@@ -41,6 +41,24 @@ describe Puppet::Type.type(:keycloak_realm).provider(:kcadm) do
       expect(property_hash[:optional_client_scopes]).to eq(['address'])
       expect(property_hash[:roles]).to eq(['offline_access', 'uma_authorization'])
     end
+
+    it 'reads frontend_url from the realm attributes' do
+      allow(described_class).to receive(:kcadm).with('get', 'realms').and_return(my_fixture_read('get.out'))
+      allow(described_class).to receive(:get_client_scopes).and_return({})
+      allow(described_class).to receive(:get_events_config).and_return({})
+      allow(described_class).to receive(:get_realm_roles).and_return([])
+      instances = described_class.instances
+      expect(instances[1].instance_variable_get('@property_hash')[:frontend_url]).to eq('https://master.example.com')
+    end
+
+    it 'reports an absent frontendUrl attribute as an empty string' do
+      allow(described_class).to receive(:kcadm).with('get', 'realms').and_return(my_fixture_read('get.out'))
+      allow(described_class).to receive(:get_client_scopes).and_return({})
+      allow(described_class).to receive(:get_events_config).and_return({})
+      allow(described_class).to receive(:get_realm_roles).and_return([])
+      instances = described_class.instances
+      expect(instances[0].instance_variable_get('@property_hash')[:frontend_url]).to eq('')
+    end
   end
   #   describe 'self.prefetch' do
   #     let(:instances) do
@@ -81,6 +99,32 @@ describe Puppet::Type.type(:keycloak_realm).provider(:kcadm) do
       property_hash = resource.provider.instance_variable_get('@property_hash')
       expect(property_hash[:ensure]).to eq(:present)
     end
+
+    it 'sends frontend_url as a realm attribute' do
+      temp = Tempfile.new('keycloak_realm')
+      etemp = Tempfile.new('keycloak_events_config')
+      allow(Tempfile).to receive(:new).with('keycloak_realm').and_return(temp)
+      allow(Tempfile).to receive(:new).with('keycloak_events_config').and_return(etemp)
+      allow(described_class).to receive(:get_realm_roles).with('test').and_return(['offline_access', 'uma_authorization'])
+      allow(resource.provider).to receive(:kcadm)
+      resource[:frontend_url] = 'https://keycloak.example.com'
+      resource.provider.create
+      data = JSON.parse(File.read(temp.path))
+      expect(data['attributes']).to eq('frontendUrl' => 'https://keycloak.example.com')
+    end
+
+    it 'does not send an attributes map when frontend_url is empty' do
+      temp = Tempfile.new('keycloak_realm')
+      etemp = Tempfile.new('keycloak_events_config')
+      allow(Tempfile).to receive(:new).with('keycloak_realm').and_return(temp)
+      allow(Tempfile).to receive(:new).with('keycloak_events_config').and_return(etemp)
+      allow(described_class).to receive(:get_realm_roles).with('test').and_return(['offline_access', 'uma_authorization'])
+      allow(resource.provider).to receive(:kcadm)
+      resource[:frontend_url] = ''
+      resource.provider.create
+      data = JSON.parse(File.read(temp.path))
+      expect(data).not_to have_key('attributes')
+    end
   end
 
   describe 'destroy' do
@@ -110,6 +154,110 @@ describe Puppet::Type.type(:keycloak_realm).provider(:kcadm) do
       resource.provider.login_with_email_allowed = :false
       resource.provider.roles = ['uma_authorization', 'new_role']
       resource.provider.flush
+    end
+  end
+
+  describe 'flush frontend_url' do
+    # A full realm representation, which is what `kcadm get realms/<name>`
+    # returns. The read back deliberately avoids `--fields attributes`.
+    let(:current_attributes) do
+      {
+        'id' => 'test',
+        'realm' => 'test',
+        'attributes' => {
+          'acr.loa.map' => '{"gold":3}',
+          'parRequestUriLifespan' => '120',
+          'frontendUrl' => 'https://old.example.com',
+        },
+      }.to_json
+    end
+
+    let(:temp) { Tempfile.new('keycloak_realm') }
+
+    before(:each) do
+      etemp = Tempfile.new('keycloak_events_config')
+      allow(Tempfile).to receive(:new).with('keycloak_realm').and_return(temp)
+      allow(Tempfile).to receive(:new).with('keycloak_events_config').and_return(etemp)
+      allow(resource.provider).to receive(:kcadm).with('get', 'authentication/flows', 'test', nil, ['alias']).and_return('[]')
+      allow(resource.provider).to receive(:kcadm).with('update', 'events/config', 'test', etemp.path)
+    end
+
+    it 'merges the new value into the existing attributes' do
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return(current_attributes)
+      expect(resource.provider).to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.frontend_url = 'https://new.example.com'
+      resource.provider.flush
+      attributes = JSON.parse(File.read(temp.path))['attributes']
+      expect(attributes['frontendUrl']).to eq('https://new.example.com')
+      expect(attributes['acr.loa.map']).to eq('{"gold":3}')
+      expect(attributes['parRequestUriLifespan']).to eq('120')
+    end
+
+    it 'removes the attribute when set to an empty string but keeps the others' do
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return(current_attributes)
+      expect(resource.provider).to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.frontend_url = ''
+      resource.provider.flush
+      attributes = JSON.parse(File.read(temp.path))['attributes']
+      expect(attributes).not_to have_key('frontendUrl')
+      expect(attributes['acr.loa.map']).to eq('{"gold":3}')
+      expect(attributes['parRequestUriLifespan']).to eq('120')
+    end
+
+    it 'does not touch attributes when only other properties change' do
+      resource[:frontend_url] = 'https://new.example.com'
+      expect(resource.provider).not_to receive(:kcadm).with('get', 'realms/test')
+      expect(resource.provider).to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.login_with_email_allowed = :false
+      resource.provider.flush
+      expect(JSON.parse(File.read(temp.path))).not_to have_key('attributes')
+    end
+
+    it 'does not emit a frontendUrl top level field' do
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return(current_attributes)
+      expect(resource.provider).to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.frontend_url = 'https://new.example.com'
+      resource.provider.flush
+      expect(JSON.parse(File.read(temp.path))).not_to have_key('frontendUrl')
+    end
+
+    it 'overrides an attributes key carried in through custom_properties' do
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return(current_attributes)
+      expect(resource.provider).to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource[:custom_properties] = { 'attributes' => 'bogus' }
+      resource.provider.frontend_url = 'https://new.example.com'
+      resource.provider.flush
+      attributes = JSON.parse(File.read(temp.path))['attributes']
+      expect(attributes['frontendUrl']).to eq('https://new.example.com')
+      expect(attributes['parRequestUriLifespan']).to eq('120')
+    end
+
+    it 'reads the full realm representation instead of a nested --fields selector' do
+      # kcadm renders `--fields attributes` as {} unless sub fields are given
+      # as `attributes(*)`, so a nested selector reads back as a realm with no
+      # attributes and would delete every one of them on update.
+      expect(resource.provider).not_to receive(:kcadm).with('get', 'realms/test', nil, nil, ['attributes'])
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return(current_attributes)
+      expect(resource.provider).to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.frontend_url = 'https://new.example.com'
+      resource.provider.flush
+      attributes = JSON.parse(File.read(temp.path))['attributes']
+      expect(attributes['parRequestUriLifespan']).to eq('120')
+      expect(attributes['acr.loa.map']).to eq('{"gold":3}')
+    end
+
+    it 'refuses to update the realm when the attributes cannot be parsed' do
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return('not json')
+      expect(resource.provider).not_to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.frontend_url = 'https://new.example.com'
+      expect { resource.provider.flush }.to raise_error(Puppet::Error, %r{refusing to update realm attributes})
+    end
+
+    it 'refuses to update the realm when the attributes are not a hash' do
+      allow(resource.provider).to receive(:kcadm).with('get', 'realms/test').and_return('{"attributes":"bogus"}')
+      expect(resource.provider).not_to receive(:kcadm).with('update', 'realms/test', nil, temp.path)
+      resource.provider.frontend_url = 'https://new.example.com'
+      expect { resource.provider.flush }.to raise_error(Puppet::Error, %r{refusing to update realm attributes})
     end
   end
 end
