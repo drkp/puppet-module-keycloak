@@ -42,6 +42,18 @@ describe 'keycloak::freeipa_user_provider' do
         )
       end
 
+      it 'leaves enable_ldap_password_policy unmanaged by default' do
+        is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_enable_ldap_password_policy
+      end
+
+      it 'leaves use_password_modify_extended_op unmanaged by default' do
+        is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_use_password_modify_extended_op
+      end
+
+      it 'leaves validate_password_policy unmanaged by default' do
+        is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_validate_password_policy
+      end
+
       context 'when enabled is false' do
         let(:params) { default_params.merge(enabled: false) }
 
@@ -52,6 +64,48 @@ describe 'keycloak::freeipa_user_provider' do
         let(:params) { default_params.merge(trust_email: true) }
 
         it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_trust_email(true) }
+      end
+
+      context 'when enable_ldap_password_policy is true' do
+        let(:params) { default_params.merge(enable_ldap_password_policy: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_enable_ldap_password_policy(true) }
+      end
+
+      context 'when use_password_modify_extended_op is true' do
+        let(:params) { default_params.merge(use_password_modify_extended_op: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_use_password_modify_extended_op(true) }
+      end
+
+      context 'when validate_password_policy is true' do
+        let(:params) { default_params.merge(validate_password_policy: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_validate_password_policy(true) }
+      end
+
+      context 'when edit_mode is WRITABLE' do
+        let(:params) { default_params.merge(edit_mode: 'WRITABLE', ldaps: true) }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_edit_mode('WRITABLE') }
+      end
+
+      context 'when edit_mode is WRITABLE without ldaps' do
+        let(:params) { default_params.merge(edit_mode: 'WRITABLE') }
+
+        it { is_expected.to compile.and_raise_error(%r{cleartext over ldap://}) }
+      end
+
+      context 'when edit_mode is UNSYNCED without ldaps' do
+        let(:params) { default_params.merge(edit_mode: 'UNSYNCED') }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_edit_mode('UNSYNCED') }
+      end
+
+      context 'when edit_mode is invalid' do
+        let(:params) { default_params.merge(edit_mode: 'NOPE') }
+
+        it { is_expected.to compile.and_raise_error(%r{edit_mode}) }
       end
 
       context 'when ensure is absent' do

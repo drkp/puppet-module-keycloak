@@ -58,12 +58,10 @@ Puppet::Type.type(:keycloak_flow).provide(:kcadm, parent: Puppet::Provider::Keyc
           flow[:top_level] = :false
           flow[:id] = e['id']
           flow[:requirement] = e['requirement']
-          flow[:configurable] = e['configurable'] if e.key?('configurable')
           flow[:flow_alias] = d['alias']
           flow[:realm] = realm
           flow[:description] = e['description']
           flow[:priority] = e['priority']
-          flow[:display_name] = e['displayName']
           flow[:alias] = e['displayName']
           if e['level'] != 0
             parent_level = levels.find { |k, _v| k == (e['level'] - 1) }

@@ -7,6 +7,23 @@ Puppet::Type.type(:keycloak_ldap_user_provider).provide(:kcadm, parent: Puppet::
 
   mk_resource_methods
 
+  # Keycloak spells most LDAP component config keys as the camelized property
+  # name with `ldap` upper-cased, e.g. `usernameLDAPAttribute`. A few keys are
+  # spelled with camel-case `Ldap` instead and have to be mapped explicitly.
+  def self.config_key_for(property)
+    case property.to_sym
+    when :enable_ldap_password_policy
+      # LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY
+      'enableLdapPasswordPolicy'
+    else
+      camelize(property).gsub(%r{ldap}i, 'LDAP')
+    end
+  end
+
+  def config_key_for(property)
+    self.class.config_key_for(property)
+  end
+
   def self.instances
     components = []
     realms.each do |realm|
@@ -30,9 +47,10 @@ Puppet::Type.type(:keycloak_ldap_user_provider).provide(:kcadm, parent: Puppet::
         component[:realm] = d['parentId']
         component[:name] = "#{component[:resource_name]} on #{component[:realm]}"
         type_properties.each do |property|
-          next unless d['config'].key?(camelize(property).gsub(%r{ldap}i, 'LDAP'))
+          config_key = config_key_for(property)
+          next unless d['config'].key?(config_key)
 
-          value = d['config'][camelize(property).gsub(%r{ldap}i, 'LDAP')][0]
+          value = d['config'][config_key][0]
           if property == :user_object_classes
             value = value.split(',')
           end
@@ -89,7 +107,7 @@ Puppet::Type.type(:keycloak_ldap_user_provider).provide(:kcadm, parent: Puppet::
               end
       next if value == :absent
 
-      data[:config][camelize(property).gsub(%r{ldap}i, 'LDAP')] = [value]
+      data[:config][config_key_for(property)] = [value]
     end
 
     t = Tempfile.new('keycloak_component')
@@ -150,7 +168,7 @@ Puppet::Type.type(:keycloak_ldap_user_provider).provide(:kcadm, parent: Puppet::
         if value == :absent
           value = ''
         end
-        data[:config][camelize(property).gsub(%r{ldap}i, 'LDAP')] = [value]
+        data[:config][config_key_for(property)] = [value]
       end
 
       t = Tempfile.new('keycloak_component')
