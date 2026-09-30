@@ -3533,6 +3533,12 @@ failureFactor
 
 Default value: `30`
 
+##### `frontend_url`
+
+Realm specific frontend URL, stored as the `frontendUrl` realm attribute.
+Overrides the server wide `hostname` for this realm only.
+Set to an empty string to remove the override.
+
 ##### `internationalization_enabled`
 
 Valid values: `true`, `false`

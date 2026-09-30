@@ -362,6 +362,45 @@ keycloak_realm { 'test':
 
 **NOTE:** If the flow properties such as `browser_flow` are changed from their defaults then this value will not be set when a realm is first created. The value will also not be updated if the flow does not exist. For new realms you will have to run Puppet twice in order to create the flows then update the realm setting.
 
+#### Realm specific frontend URL
+
+`frontend_url` overrides the server wide `hostname` for a single realm, which is useful when
+some realms are only reachable over an internal name:
+
+```puppet
+keycloak_realm { 'master':
+  ensure       => 'present',
+  frontend_url => 'https://keycloak-internal.example.com',
+}
+
+keycloak_realm { 'EXAMPLE.COM':
+  ensure       => 'present',
+  frontend_url => 'https://auth.example.com',
+}
+```
+
+Keycloak stores this as the `frontendUrl` entry of the realm `attributes` map rather than as a
+top level realm setting. Set `frontend_url => ''` to remove an existing override.
+
+**NOTE:** Keycloak treats a submitted `attributes` map as authoritative and deletes any realm
+attribute missing from it. This module therefore reads the realm's current attributes and merges
+`frontendUrl` into them, and only does so when `frontend_url` actually changes.
+
+**NOTE:** To check the value, read the whole realm. `kcadm.sh get realms/master --fields attributes`
+always prints `{}`, because `--fields` renders a nested object as empty unless sub fields are
+requested:
+
+```
+/opt/keycloak/bin/kcadm-wrapper.sh get realms/master | grep -i frontendurl
+/opt/keycloak/bin/kcadm-wrapper.sh get realms/master --fields 'attributes(*)'
+```
+
+**NOTE:** Setting `frontend_url` on the realm used by `kcadm-wrapper.sh` (`master` by default)
+changes the issuer of that realm, which invalidates the cached admin token in
+`/opt/keycloak/conf/kcadm.config`. The wrapper only logs in again once that token expires, so
+`kcadm` calls made in the meantime fail. The first Puppet run after the change may therefore
+report errors for later Keycloak resources; they resolve on the next run.
+
 ### keycloak\_role\_mapping
 
 Manage realm role mappings for users and groups. Example:

@@ -142,6 +142,8 @@
     "displayNameHtml" : "<div class=\"kc-logo-text\"><span>Keycloak</span></div>",
     "minimumQuickLoginWaitSeconds" : "60",
     "_browser_header.contentSecurityPolicy" : "frame-src 'self'",
+    "acr.loa.map" : "{\"gold\":3}",
+    "frontendUrl" : "https://master.example.com",
     "waitIncrementSeconds" : "60"
   }
 } ]

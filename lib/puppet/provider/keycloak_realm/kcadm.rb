@@ -41,6 +41,57 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
     ]
   end
 
+  # Properties stored in the realm `attributes` map rather than as top level
+  # fields of the realm representation.
+  def self.attributes_properties
+    [
+      :frontend_url,
+    ]
+  end
+
+  def attributes_properties
+    self.class.attributes_properties
+  end
+
+  # Read the current `attributes` map of a realm.
+  #
+  # Keycloak treats the `attributes` map of a realm update as authoritative:
+  # any attribute present on the realm but absent from the submitted map is
+  # removed. Updates that touch an attribute backed property therefore have to
+  # resend every attribute that should be kept. An unreadable response must
+  # abort the update rather than degrade to an empty map, which would delete
+  # every attribute of the realm.
+  #
+  # The full representation is fetched deliberately. `kcadm --fields attributes`
+  # renders a nested object as `{}` unless sub fields are given as
+  # `attributes(*)`, which would silently look like a realm with no attributes.
+  def realm_attributes(realm)
+    output = kcadm('get', "realms/#{realm}")
+    Puppet.debug("Realm #{realm} attributes: #{output}")
+    begin
+      data = JSON.parse(output)
+    rescue JSON::ParserError => e
+      raise Puppet::Error, "Unable to parse attributes of realm #{realm}, refusing to update realm attributes\nError message: #{e.message}"
+    end
+    unless data.is_a?(Hash) && (data['attributes'].nil? || data['attributes'].is_a?(Hash))
+      raise Puppet::Error, "Unexpected attributes for realm #{realm}, refusing to update realm attributes"
+    end
+
+    data['attributes'] || {}
+  end
+
+  # Apply an attribute backed property to a realm attribute map, removing the
+  # entry when the desired value is empty.
+  def merge_realm_attribute(attributes, property, value)
+    key = camelize(property)
+    if value.to_s.empty?
+      attributes.delete(key)
+    else
+      attributes[key] = value.to_s
+    end
+    attributes
+  end
+
   def self.get_client_scopes(realm, type)
     output = kcadm('get', "realms/#{realm}/default-#{type}-client-scopes")
     Puppet.debug("Realms #{realm} #{type} client scopes: #{output}")
@@ -129,6 +180,10 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
                   d['browserSecurityHeaders'][camelize(property)]
                 elsif smtp_server_properties.include?(property)
                   d['smtpServer'][camelize(property.to_s.gsub(%r{smtp_server_}, ''))]
+                elsif attributes_properties.include?(property)
+                  # An absent attribute is reported as an empty string so that
+                  # `frontend_url => ''` is a stable way to express "no override".
+                  (d['attributes'] || {})[camelize(property)] || ''
                 else
                   d[camelize(property)]
                 end
@@ -144,7 +199,13 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
       realm[:roles] = get_realm_roles(realm[:name])
       realm[:custom_properties] = {}
       d.each_pair do |k, v|
-        realm[:custom_properties][k] = v unless type_properties.include?(k.to_sym)
+        # The attributes map is surfaced through dedicated properties such as
+        # frontend_url. It cannot round trip through custom_properties, which
+        # rejects Hash values.
+        next if k == 'attributes'
+        next if type_properties.include?(k.to_sym)
+
+        realm[:custom_properties][k] = v
       end
       realms << new(realm)
     end
@@ -186,6 +247,13 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
           data['browserSecurityHeaders'][camelize(property)] = convert_property_value(resource[property.to_sym])
         elsif self.class.smtp_server_properties.include?(property) && resource[property]
           data['smtpServer'][camelize(property.to_s.gsub(%r{smtp_server_}, ''))] = resource[property]
+        elsif attributes_properties.include?(property)
+          # A new realm has no attributes to preserve, so only the managed ones
+          # are sent. An empty value means "no override" and is simply omitted.
+          unless resource[property].to_s.empty?
+            data['attributes'] ||= {}
+            data['attributes'][camelize(property)] = resource[property]
+          end
         else
           data[camelize(property)] = convert_property_value(resource[property.to_sym])
         end
@@ -330,6 +398,7 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
     unless @property_flush.empty?
       data = {}
       events_config = {}
+      realm_attrs = nil
       (@property_flush[:custom_properties] || resource[:custom_properties] || {}).each_pair do |k, v|
         data[k] = v unless type_properties.include?(k.to_sym)
       end
@@ -338,6 +407,17 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
 
         if flow_properties.include?(property) && !available_flows(resource[:name]).include?(resource[property.to_sym])
           Puppet.warning("Keycloak_realm[#{resource[:name]}]: #{property} '#{resource[property.to_sym]}' does not exist, skipping")
+          next
+        end
+        if attributes_properties.include?(property)
+          # Only rewrite the attribute map when this property actually changed.
+          # Keycloak removes every realm attribute that is missing from a
+          # submitted map, so the current attributes are read back and merged
+          # into rather than sending just the managed keys.
+          if @property_flush.key?(property.to_sym)
+            realm_attrs ||= realm_attributes(resource[:name])
+            merge_realm_attribute(realm_attrs, property, @property_flush[property.to_sym])
+          end
           next
         end
         if self.class.browser_security_headers.include?(property) && !data.key?('browserSecurityHeaders')
@@ -359,6 +439,10 @@ Puppet::Type.type(:keycloak_realm).provide(:kcadm, parent: Puppet::Provider::Key
           events_config[camelize(property)] = convert_property_value(resource[property.to_sym])
         end
       end
+
+      # Assigned last so that the authoritative map read back from Keycloak
+      # always wins over anything carried in via custom_properties.
+      data['attributes'] = realm_attrs if realm_attrs
 
       unless data.empty?
         t = Tempfile.new('keycloak_realm')

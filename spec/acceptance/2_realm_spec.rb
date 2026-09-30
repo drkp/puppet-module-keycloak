@@ -409,4 +409,59 @@ describe 'keycloak_realm:', if: RSpec.configuration.keycloak_full_batch1 do
       end
     end
   end
+
+  context 'when managing frontend_url' do
+    it 'seeds an unmanaged realm attribute' do
+      on hosts, "/opt/keycloak/bin/kcadm-wrapper.sh update realms/test -s 'attributes.parRequestUriLifespan=120'"
+    end
+
+    it 'sets frontend_url' do
+      pp = <<-PUPPET_PP
+      class { 'keycloak': }
+      keycloak_realm { 'test':
+        ensure       => 'present',
+        frontend_url => 'https://frontend.example.org',
+      }
+      PUPPET_PP
+
+      apply_manifest(pp, catch_failures: true)
+      apply_manifest(pp, catch_changes: true)
+    end
+
+    it 'has set the frontendUrl attribute without removing the others' do
+      on hosts, '/opt/keycloak/bin/kcadm-wrapper.sh get realms/test' do |result|
+        data = JSON.parse(result.stdout)
+        expect(data['attributes']['frontendUrl']).to eq('https://frontend.example.org')
+        expect(data['attributes']['parRequestUriLifespan']).to eq('120')
+      end
+    end
+
+    it 'advertises the frontend URL in the OIDC discovery document' do
+      on hosts, 'curl -s http://localhost:8080/realms/test/.well-known/openid-configuration' do |result|
+        data = JSON.parse(result.stdout)
+        expect(data['issuer']).to eq('https://frontend.example.org/realms/test')
+      end
+    end
+
+    it 'removes frontend_url' do
+      pp = <<-PUPPET_PP
+      class { 'keycloak': }
+      keycloak_realm { 'test':
+        ensure       => 'present',
+        frontend_url => '',
+      }
+      PUPPET_PP
+
+      apply_manifest(pp, catch_failures: true)
+      apply_manifest(pp, catch_changes: true)
+    end
+
+    it 'has removed the frontendUrl attribute without removing the others' do
+      on hosts, '/opt/keycloak/bin/kcadm-wrapper.sh get realms/test' do |result|
+        data = JSON.parse(result.stdout)
+        expect(data['attributes']).not_to have_key('frontendUrl')
+        expect(data['attributes']['parRequestUriLifespan']).to eq('120')
+      end
+    end
+  end
 end
