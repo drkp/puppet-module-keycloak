@@ -1160,6 +1160,7 @@ The following parameters are available in the `keycloak::freeipa_user_provider` 
 * [`use_password_modify_extended_op`](#-keycloak--freeipa_user_provider--use_password_modify_extended_op)
 * [`validate_password_policy`](#-keycloak--freeipa_user_provider--validate_password_policy)
 * [`edit_mode`](#-keycloak--freeipa_user_provider--edit_mode)
+* [`cache_policy`](#-keycloak--freeipa_user_provider--cache_policy)
 * [`full_sync_period`](#-keycloak--freeipa_user_provider--full_sync_period)
 * [`changed_sync_period`](#-keycloak--freeipa_user_provider--changed_sync_period)
 
@@ -1282,6 +1283,18 @@ and typically use_password_modify_extended_op for password changes.
 `WRITABLE` also requires `ldaps` since it sends user passwords to FreeIPA.
 
 Default value: `'READ_ONLY'`
+
+##### <a name="-keycloak--freeipa_user_provider--cache_policy"></a>`cache_policy`
+
+Data type: `Optional[Enum['DEFAULT', 'EVICT_DAILY', 'EVICT_WEEKLY', 'MAX_LIFESPAN', 'NO_CACHE']]`
+
+Keycloak user cache policy for this provider. `DEFAULT` caches federated
+user attributes indefinitely, so changes made directly in FreeIPA, such as
+an administrative password reset, are not seen by Keycloak until the cache
+entry is invalidated. Use `NO_CACHE` when realm logic must observe LDAP
+attribute changes made outside Keycloak.
+
+Default value: `undef`
 
 ##### <a name="-keycloak--freeipa_user_provider--full_sync_period"></a>`full_sync_period`
 

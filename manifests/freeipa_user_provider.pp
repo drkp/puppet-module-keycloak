@@ -49,6 +49,12 @@
 #   `WRITABLE` requires a bind_dn with write access to the FreeIPA directory,
 #   and typically use_password_modify_extended_op for password changes.
 #   `WRITABLE` also requires `ldaps` since it sends user passwords to FreeIPA.
+# @param cache_policy
+#   Keycloak user cache policy for this provider. `DEFAULT` caches federated
+#   user attributes indefinitely, so changes made directly in FreeIPA, such as
+#   an administrative password reset, are not seen by Keycloak until the cache
+#   entry is invalidated. Use `NO_CACHE` when realm logic must observe LDAP
+#   attribute changes made outside Keycloak.
 # @param full_sync_period
 #   Synchronize all users this often (fullSyncPeriod)
 # @param changed_sync_period
@@ -70,6 +76,7 @@ define keycloak::freeipa_user_provider (
   Optional[Boolean] $use_password_modify_extended_op = undef,
   Optional[Boolean] $validate_password_policy = undef,
   Enum['READ_ONLY', 'WRITABLE', 'UNSYNCED'] $edit_mode = 'READ_ONLY',
+  Optional[Enum['DEFAULT', 'EVICT_DAILY', 'EVICT_WEEKLY', 'MAX_LIFESPAN', 'NO_CACHE']] $cache_policy = undef,
   Optional[Integer] $full_sync_period = undef,
   Optional[Integer] $changed_sync_period = undef
 ) {
@@ -108,6 +115,7 @@ define keycloak::freeipa_user_provider (
     enable_ldap_password_policy              => $enable_ldap_password_policy,
     use_password_modify_extended_op          => $use_password_modify_extended_op,
     validate_password_policy                 => $validate_password_policy,
+    cache_policy                             => $cache_policy,
     full_sync_period                         => $full_sync_period,
     changed_sync_period                      => $changed_sync_period,
   }

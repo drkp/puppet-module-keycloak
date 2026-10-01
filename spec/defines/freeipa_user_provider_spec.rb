@@ -108,6 +108,22 @@ describe 'keycloak::freeipa_user_provider' do
         it { is_expected.to compile.and_raise_error(%r{edit_mode}) }
       end
 
+      it 'leaves cache_policy to the type default' do
+        is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').without_cache_policy
+      end
+
+      context 'when cache_policy is NO_CACHE' do
+        let(:params) { default_params.merge(cache_policy: 'NO_CACHE') }
+
+        it { is_expected.to contain_keycloak_ldap_user_provider('ipa.example.org on EXAMPLE.ORG').with_cache_policy('NO_CACHE') }
+      end
+
+      context 'when cache_policy is invalid' do
+        let(:params) { default_params.merge(cache_policy: 'SOMETIMES') }
+
+        it { is_expected.to compile.and_raise_error(%r{cache_policy}) }
+      end
+
       context 'when ensure is absent' do
         let(:params) { default_params.merge(ensure: 'absent') }
 
