@@ -1156,6 +1156,7 @@ The following parameters are available in the `keycloak::freeipa_user_provider` 
 * [`ldaps`](#-keycloak--freeipa_user_provider--ldaps)
 * [`enabled`](#-keycloak--freeipa_user_provider--enabled)
 * [`trust_email`](#-keycloak--freeipa_user_provider--trust_email)
+* [`cache_policy`](#-keycloak--freeipa_user_provider--cache_policy)
 * [`full_sync_period`](#-keycloak--freeipa_user_provider--full_sync_period)
 * [`changed_sync_period`](#-keycloak--freeipa_user_provider--changed_sync_period)
 
@@ -1238,6 +1239,18 @@ Data type: `Boolean`
 Trust email addresses from FreeIPA as verified (trustEmail)
 
 Default value: `false`
+
+##### <a name="-keycloak--freeipa_user_provider--cache_policy"></a>`cache_policy`
+
+Data type: `Optional[Enum['DEFAULT', 'EVICT_DAILY', 'EVICT_WEEKLY', 'MAX_LIFESPAN', 'NO_CACHE']]`
+
+Keycloak user cache policy for this provider. `DEFAULT` caches federated
+user attributes indefinitely, so changes made directly in FreeIPA, such as
+an administrative password reset, are not seen by Keycloak until the cache
+entry is invalidated. Use `NO_CACHE` when realm logic must observe LDAP
+attribute changes made outside Keycloak.
+
+Default value: `undef`
 
 ##### <a name="-keycloak--freeipa_user_provider--full_sync_period"></a>`full_sync_period`
 

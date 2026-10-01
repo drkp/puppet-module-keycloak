@@ -406,6 +406,13 @@ keycloak::freeipa_user_provider { 'ipa.example.org':
 }
 ```
 
+**NOTE:** Keycloak caches federated user attributes indefinitely under the default
+cache policy, and only invalidates an entry when Keycloak itself writes the user.
+Changes made directly in FreeIPA, such as an administrative password reset, are
+therefore not observed. Set `cache_policy => 'NO_CACHE'` if realm logic has to react
+to LDAP attribute changes made outside Keycloak, at the cost of an LDAP lookup per
+user read.
+
 ### keycloak\_ldap_mapper
 
 Use the LDAP attribute 'gecos' as the full name attribute.

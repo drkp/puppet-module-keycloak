@@ -33,6 +33,12 @@
 #   Enable or disable the user provider without removing it
 # @param trust_email
 #   Trust email addresses from FreeIPA as verified (trustEmail)
+# @param cache_policy
+#   Keycloak user cache policy for this provider. `DEFAULT` caches federated
+#   user attributes indefinitely, so changes made directly in FreeIPA, such as
+#   an administrative password reset, are not seen by Keycloak until the cache
+#   entry is invalidated. Use `NO_CACHE` when realm logic must observe LDAP
+#   attribute changes made outside Keycloak.
 # @param full_sync_period
 #   Synchronize all users this often (fullSyncPeriod)
 # @param changed_sync_period
@@ -50,6 +56,7 @@ define keycloak::freeipa_user_provider (
   Boolean $ldaps = false,
   Boolean $enabled = true,
   Boolean $trust_email = false,
+  Optional[Enum['DEFAULT', 'EVICT_DAILY', 'EVICT_WEEKLY', 'MAX_LIFESPAN', 'NO_CACHE']] $cache_policy = undef,
   Optional[Integer] $full_sync_period = undef,
   Optional[Integer] $changed_sync_period = undef
 ) {
@@ -81,6 +88,7 @@ define keycloak::freeipa_user_provider (
     vendor                                   => 'rhds',
     enabled                                  => $enabled,
     trust_email                              => $trust_email,
+    cache_policy                             => $cache_policy,
     full_sync_period                         => $full_sync_period,
     changed_sync_period                      => $changed_sync_period,
   }
